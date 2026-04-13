@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Health History{% endblock %}
+{% block head %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+{% block content %}
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-panel"><h1>Guardian Track</h1></div>
+  </aside>
+  <main class="content-area">
+    {% if patient %}
+    <section class="hero-banner"><h2>{{ patient.name }} Health History</h2></section>
+    <section class="chart-grid">
+      <article class="panel"><canvas id="pulseChart"></canvas></article>
+      <article class="panel"><canvas id="tempChart"></canvas></article>
+      <article class="panel"><canvas id="spo2Chart"></canvas></article>
+      <article class="panel"><canvas id="batteryChart"></canvas></article>
+    </section>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if patient %}
+<script>
+const historyData = {{ history_json|safe }};
+const labels = historyData.map((x) => new Date(x.timestamp).toLocaleTimeString());
+function makeChart(id, values, color){
+  new Chart(document.getElementById(id), {
+    type: "line",
+    data: { labels, datasets: [{ data: values, borderColor: color, backgroundColor: color + "22", fill: true, tension: 0.35 }] },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+}
+makeChart("pulseChart", historyData.map((x) => x.pulse_rate), "#ff7b42");
+makeChart("tempChart", historyData.map((x) => x.body_temperature), "#ffb347");
+makeChart("spo2Chart", historyData.map((x) => x.spo2), "#1fa5a1");
+makeChart("batteryChart", historyData.map((x) => x.battery_level), "#355cde");
+</script>
+{% endif %}
+{% endblock %}

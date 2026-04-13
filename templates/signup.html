@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Signup{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block content %}
+<main class="auth-layout">
+  <section class="auth-info">
+    <p class="eyebrow">Caregiver Registration</p>
+    <h1>Create caregiver account</h1>
+  </section>
+  <section class="auth-card">
+    <p class="eyebrow">Signup</p>
+    <h2>Create account</h2>
+    <form method="post" class="auth-form">
+      <label>Full Name<input type="text" name="full_name" required></label>
+      <label>Email<input type="email" name="email" required></label>
+      <label>Password<input type="password" name="password" required></label>
+      <button class="primary-btn full-width" type="submit">Create Account</button>
+    </form>
+    <p class="muted small-text">Already have account? <a href="{{ url_for('login') }}">Login</a></p>
+  </section>
+</main>
+{% endblock %}

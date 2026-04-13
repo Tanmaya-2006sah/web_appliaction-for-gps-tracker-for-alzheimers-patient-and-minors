@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block content %}
+<main class="auth-layout">
+  <section class="auth-info">
+    <p class="eyebrow">Smart Safety Monitoring</p>
+    <h1>Guardian Track</h1>
+    <p class="lede">Caregiver login for GPS tracking, geofencing, pulse monitoring, temperature monitoring, fall detection, health graphs, and alerts.</p>
+  </section>
+  <section class="auth-card">
+    <p class="eyebrow">Caregiver Login</p>
+    <h2>Sign in</h2>
+    <p class="muted">Demo login: caregiver@guardiantrack.com / care123</p>
+    <form method="post" class="auth-form">
+      <label>Email<input type="email" name="email" required></label>
+      <label>Password<input type="password" name="password" required></label>
+      <button class="primary-btn full-width" type="submit">Login</button>
+    </form>
+    <p class="muted small-text">New caregiver? <a href="{{ url_for('signup') }}">Create account</a></p>
+  </section>
+</main>
+{% endblock %}

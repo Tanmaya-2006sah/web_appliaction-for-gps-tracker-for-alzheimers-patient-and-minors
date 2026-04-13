@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Geofencing{% endblock %}
+{% block content %}
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-panel"><h1>Guardian Track</h1></div>
+    <nav class="nav-panel">
+      <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="nav-link" href="{{ url_for('patients_page') }}">Patients</a>
+      <a class="nav-link active" href="{{ url_for('geofencing_page') }}">Geofencing</a>
+      <a class="nav-link" href="{{ url_for('health_history_page') }}">Health History</a>
+      <a class="nav-link" href="{{ url_for('alerts_page') }}">Alerts</a>
+    </nav>
+  </aside>
+  <main class="content-area">
+    {% if patient %}
+    <section class="hero-banner"><h2>Live Geofence</h2></section>
+    <section class="stats-grid">
+      <article class="stat-card"><span>Patient</span><strong>{{ patient.name }}</strong></article>
+      <article class="stat-card"><span>Distance</span><strong id="patient-distance">-</strong></article>
+      <article class="stat-card"><span>Radius</span><strong>{{ patient.geofence_radius_m }} m</strong></article>
+      <article class="stat-card"><span>Status</span><strong id="patient-status">-</strong></article>
+    </section>
+    <article class="panel">
+      <div id="geofence-map" class="map-box"></div>
+    </article>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if patient %}
+<script>
+const patientId = {{ patient.id }};
+const initialPayload = {{ patient_json|safe }};
+const map = L.map("geofence-map").setView([initialPayload.latest.latitude, initialPayload.latest.longitude], 16);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+const patientMarker = L.marker([initialPayload.latest.latitude, initialPayload.latest.longitude]).addTo(map);
+const safeZoneMarker = L.marker([initialPayload.safe_zone_lat, initialPayload.safe_zone_lng]).addTo(map);
+const trail = L.polyline([], { color: "#ff7b42", weight: 4 }).addTo(map);
+const circle = L.circle([initialPayload.safe_zone_lat, initialPayload.safe_zone_lng], { radius: initialPayload.geofence_radius_m, color: "#1fa5a1", fillColor: "#1fa5a1", fillOpacity: 0.15 }).addTo(map);
+
+function render(data){
+  document.getElementById("patient-distance").textContent = `${data.distance_m} m`;
+  document.getElementById("patient-status").textContent = data.status;
+  patientMarker.setLatLng([data.latest.latitude, data.latest.longitude]);
+  safeZoneMarker.setLatLng([data.safe_zone_lat, data.safe_zone_lng]);
+  circle.setLatLng([data.safe_zone_lat, data.safe_zone_lng]);
+  circle.setRadius(data.geofence_radius_m);
+  trail.setLatLngs(data.history.map((e) => [e.latitude, e.longitude]));
+}
+async function refreshPatient(){
+  const response = await fetch(`/api/patient/${patientId}`);
+  const data = await response.json();
+  render(data);
+}
+render(initialPayload);
+setInterval(refreshPatient, 10000);
+</script>
+{% endif %}
+{% endblock %}

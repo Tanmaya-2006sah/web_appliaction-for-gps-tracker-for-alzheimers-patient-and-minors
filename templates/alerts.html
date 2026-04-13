@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Alerts{% endblock %}
+{% block content %}
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-panel"><h1>Guardian Track</h1></div>
+  </aside>
+  <main class="content-area">
+    <section class="hero-banner"><h2>Alert History</h2></section>
+    <section class="panel">
+      <div class="stack-list">
+        {% for alert in alerts %}
+        <div class="list-card">
+          <strong>{{ alert.patient.name }}</strong>
+          <p>{{ alert.message }}</p>
+          <p class="muted">{{ alert.event_type }} | {{ alert.created_at|datetime }}</p>
+        </div>
+        {% else %}
+        <div class="empty-state">No alerts yet.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</div>
+{% endblock %}
