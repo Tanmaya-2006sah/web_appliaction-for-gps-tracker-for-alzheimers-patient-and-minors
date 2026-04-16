@@ -3,7 +3,14 @@
 {% block content %}
 <div class="app-shell">
   <aside class="sidebar">
-    <div class="brand-panel"><h1>Guardian Track</h1></div>
+    <div class="brand-panel">
+      <p class="eyebrow">Live Safety Tracking</p>
+      <h1>Guardian Track</h1>
+      <p class="lede">
+        Monitor location drift, safe-zone coverage, and patient movement with a premium live geofencing view.
+      </p>
+    </div>
+
     <nav class="nav-panel">
       <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
       <a class="nav-link" href="{{ url_for('patients_page') }}">Patients</a>
@@ -11,19 +18,143 @@
       <a class="nav-link" href="{{ url_for('health_history_page') }}">Health History</a>
       <a class="nav-link" href="{{ url_for('alerts_page') }}">Alerts</a>
     </nav>
+
+    {% if logged_in_user %}
+    <div class="profile-panel">
+      <div>
+        <strong>{{ logged_in_user.full_name }}</strong>
+        <p class="muted">{{ logged_in_user.email }}</p>
+      </div>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button class="secondary-btn" type="submit">Logout</button>
+      </form>
+    </div>
+    {% endif %}
   </aside>
+
   <main class="content-area">
     {% if patient %}
-    <section class="hero-banner"><h2>Live Geofence</h2></section>
-    <section class="stats-grid">
-      <article class="stat-card"><span>Patient</span><strong>{{ patient.name }}</strong></article>
-      <article class="stat-card"><span>Distance</span><strong id="patient-distance">-</strong></article>
-      <article class="stat-card"><span>Radius</span><strong>{{ patient.geofence_radius_m }} m</strong></article>
-      <article class="stat-card"><span>Status</span><strong id="patient-status">-</strong></article>
+    <section class="hero-banner map-hero">
+      <div class="map-hero-grid">
+        <div>
+          <p class="eyebrow">Live Geofence View</p>
+          <h2>{{ patient.name }} Safe-Zone Monitoring</h2>
+          <p class="muted">
+            Track movement against the defined radius, watch live location updates, and keep a clear view of how far the patient has moved from the safe zone.
+          </p>
+
+          <div class="map-badges">
+            <span class="map-badge">Radius {{ patient.geofence_radius_m }} m</span>
+            <span class="map-badge">Safe Zone Active</span>
+            <span class="map-badge">Live Trail</span>
+          </div>
+        </div>
+
+        <div class="map-visual" aria-hidden="true">
+          <div class="map-ring"></div>
+          <div class="map-pin"></div>
+          <div class="map-card">GPS boundary monitoring with live trail view</div>
+        </div>
+      </div>
     </section>
-    <article class="panel">
-      <div id="geofence-map" class="map-box"></div>
-    </article>
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <span>Patient</span>
+        <strong>{{ patient.name }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Distance</span>
+        <strong id="patient-distance">-</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Radius</span>
+        <strong>{{ patient.geofence_radius_m }} m</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Status</span>
+        <strong id="patient-status">-</strong>
+      </article>
+    </section>
+
+    <section class="map-layout">
+      <article class="panel map-panel">
+        <div class="panel-head">
+          <h3>Real-Time Map</h3>
+          <span class="soft-tag">{{ patient.safe_zone_name }}</span>
+        </div>
+        <div id="geofence-map" class="map-box"></div>
+      </article>
+
+      <aside class="map-info-panel">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Live Metrics</h3>
+            <span class="soft-tag">Current readings</span>
+          </div>
+
+          <div class="map-stats-grid">
+            <div class="map-stat">
+              <span>Pulse</span>
+              <strong id="live-pulse">-</strong>
+            </div>
+            <div class="map-stat">
+              <span>SpO2</span>
+              <strong id="live-spo2">-</strong>
+            </div>
+            <div class="map-stat">
+              <span>Temperature</span>
+              <strong id="live-temp">-</strong>
+            </div>
+            <div class="map-stat">
+              <span>Battery</span>
+              <strong id="live-battery">-</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel settings-panel">
+          <div class="panel-head">
+            <h3>Tracking Notes</h3>
+            <span class="soft-tag">Patient context</span>
+          </div>
+
+          <div class="workflow-grid">
+            <div class="workflow-step">
+              <div class="workflow-number">1</div>
+              <div>
+                <strong>Safe zone center</strong>
+                <p>{{ patient.safe_zone_name }} is used as the protected location anchor.</p>
+              </div>
+            </div>
+
+            <div class="workflow-step">
+              <div class="workflow-number">2</div>
+              <div>
+                <strong>Movement trail</strong>
+                <p>The line on the map shows the recent patient path based on saved telemetry.</p>
+              </div>
+            </div>
+
+            <div class="workflow-step">
+              <div class="workflow-number">3</div>
+              <div>
+                <strong>Alert condition</strong>
+                <p>If the patient leaves the safe radius, the system can record a geofence alert.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </section>
+    {% else %}
+    <section class="panel empty-history">
+      <h2>No patient available for geofencing</h2>
+      <p class="muted">Add a patient first from the Patients page to see live map tracking.</p>
+    </section>
     {% endif %}
   </main>
 </div>
@@ -34,27 +165,48 @@
 <script>
 const patientId = {{ patient.id }};
 const initialPayload = {{ patient_json|safe }};
+
 const map = L.map("geofence-map").setView([initialPayload.latest.latitude, initialPayload.latest.longitude], 16);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap contributors"
+}).addTo(map);
+
 const patientMarker = L.marker([initialPayload.latest.latitude, initialPayload.latest.longitude]).addTo(map);
 const safeZoneMarker = L.marker([initialPayload.safe_zone_lat, initialPayload.safe_zone_lng]).addTo(map);
-const trail = L.polyline([], { color: "#ff7b42", weight: 4 }).addTo(map);
-const circle = L.circle([initialPayload.safe_zone_lat, initialPayload.safe_zone_lng], { radius: initialPayload.geofence_radius_m, color: "#1fa5a1", fillColor: "#1fa5a1", fillOpacity: 0.15 }).addTo(map);
+const trail = L.polyline([], { color: "#f97316", weight: 4 }).addTo(map);
+const circle = L.circle(
+  [initialPayload.safe_zone_lat, initialPayload.safe_zone_lng],
+  {
+    radius: initialPayload.geofence_radius_m,
+    color: "#0f766e",
+    fillColor: "#0f766e",
+    fillOpacity: 0.15
+  }
+).addTo(map);
 
 function render(data){
   document.getElementById("patient-distance").textContent = `${data.distance_m} m`;
   document.getElementById("patient-status").textContent = data.status;
+  document.getElementById("live-pulse").textContent = `${data.latest.pulse_rate} bpm`;
+  document.getElementById("live-spo2").textContent = `${data.latest.spo2}%`;
+  document.getElementById("live-temp").textContent = `${data.latest.body_temperature} C`;
+  document.getElementById("live-battery").textContent = `${data.latest.battery_level}%`;
+
   patientMarker.setLatLng([data.latest.latitude, data.latest.longitude]);
   safeZoneMarker.setLatLng([data.safe_zone_lat, data.safe_zone_lng]);
   circle.setLatLng([data.safe_zone_lat, data.safe_zone_lng]);
   circle.setRadius(data.geofence_radius_m);
   trail.setLatLngs(data.history.map((e) => [e.latitude, e.longitude]));
 }
+
 async function refreshPatient(){
   const response = await fetch(`/api/patient/${patientId}`);
   const data = await response.json();
   render(data);
 }
+
 render(initialPayload);
 setInterval(refreshPatient, 10000);
 </script>

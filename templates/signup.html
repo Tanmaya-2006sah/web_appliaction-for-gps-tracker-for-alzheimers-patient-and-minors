@@ -1,22 +1,108 @@
 {% extends "base.html" %}
 {% block title %}Signup{% endblock %}
 {% block body_class %}auth-page{% endblock %}
+
 {% block content %}
 <main class="auth-layout">
   <section class="auth-info">
-    <p class="eyebrow">Caregiver Registration</p>
-    <h1>Create caregiver account</h1>
+    <div class="auth-copy">
+      <p class="eyebrow">Caregiver Registration</p>
+      <h1>Create an account to manage patients, safe zones, and health monitoring.</h1>
+      <p class="lede">
+        This caregiver account will be used to add patients, review their history, check alerts,
+        and manage daily safety tracking from one unified monitoring dashboard.
+      </p>
+    </div>
+
+    <div class="auth-feature-grid">
+      <div class="auth-feature">
+        <strong>Patient Profiles</strong>
+        <p class="muted">Register each patient with age, category, notes, safe zone, and health thresholds.</p>
+      </div>
+      <div class="auth-feature">
+        <strong>Geofencing Setup</strong>
+        <p class="muted">Configure safe zones and view live location against the protected area.</p>
+      </div>
+      <div class="auth-feature">
+        <strong>Health Charts</strong>
+        <p class="muted">Track pulse, temperature, oxygen level, and battery across time.</p>
+      </div>
+      <div class="auth-feature">
+        <strong>Alert Management</strong>
+        <p class="muted">Keep a clear history of important safety and wellness events for review.</p>
+      </div>
+    </div>
+
+    <div class="auth-kpi-grid">
+      <div class="auth-kpi">
+        <span class="muted">Profile Setup</span>
+        <strong>Fast</strong>
+      </div>
+      <div class="auth-kpi">
+        <span class="muted">Monitoring</span>
+        <strong>Live</strong>
+      </div>
+      <div class="auth-kpi">
+        <span class="muted">Alerts</span>
+        <strong>Ready</strong>
+      </div>
+    </div>
+
+    <div class="auth-visual" aria-hidden="true">
+      <div class="auth-board">
+        <div class="auth-board-top">
+          <strong>Account Setup</strong>
+          <span><i></i><i></i><i></i></span>
+        </div>
+        <div class="auth-chart"></div>
+        <div class="auth-list">
+          <div>Step 1: Create caregiver access</div>
+          <div>Step 2: Add patient profiles</div>
+          <div>Step 3: Start monitoring</div>
+        </div>
+      </div>
+
+      <div class="auth-float auth-float-one">Profiles</div>
+      <div class="auth-float auth-float-two">Tracking</div>
+      <div class="auth-float auth-float-three">History</div>
+    </div>
   </section>
+
   <section class="auth-card">
-    <p class="eyebrow">Signup</p>
-    <h2>Create account</h2>
+    <div class="auth-topline">
+      <div>
+        <p class="eyebrow">Create Account</p>
+        <h2>Register caregiver</h2>
+      </div>
+      <span class="soft-tag">New access</span>
+    </div>
+
+    <p class="muted">
+      Create a caregiver account to access patient profiles, geofencing, health history, and alerts.
+    </p>
+
     <form method="post" class="auth-form">
-      <label>Full Name<input type="text" name="full_name" required></label>
-      <label>Email<input type="email" name="email" required></label>
-      <label>Password<input type="password" name="password" required></label>
-      <button class="primary-btn full-width" type="submit">Create Account</button>
+      <label>
+        Full Name
+        <input type="text" name="full_name" placeholder="Enter full name" required>
+      </label>
+
+      <label>
+        Email
+        <input type="email" name="email" placeholder="Enter email" required>
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" placeholder="Minimum 6 characters" required>
+      </label>
+
+      <button class="primary-btn full-width" type="submit">Create Caregiver Account</button>
     </form>
-    <p class="muted small-text">Already have account? <a href="{{ url_for('login') }}">Login</a></p>
+
+    <p class="muted small-text">
+      Already have account? <a href="{{ url_for('login') }}">Login</a>
+    </p>
   </section>
 </main>
 {% endblock %}

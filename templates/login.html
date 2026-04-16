@@ -1,23 +1,103 @@
 {% extends "base.html" %}
 {% block title %}Login{% endblock %}
 {% block body_class %}auth-page{% endblock %}
+
 {% block content %}
 <main class="auth-layout">
   <section class="auth-info">
-    <p class="eyebrow">Smart Safety Monitoring</p>
-    <h1>Guardian Track</h1>
-    <p class="lede">Caregiver login for GPS tracking, geofencing, pulse monitoring, temperature monitoring, fall detection, health graphs, and alerts.</p>
+    <div class="auth-copy">
+      <p class="eyebrow">Caregiver Safety Intelligence</p>
+      <h1>Guardian Track brings location, health, and alerts into one premium dashboard.</h1>
+      <p class="lede">
+        Monitor minors and Alzheimer’s patients with live geofencing, pulse and temperature trends,
+        fall awareness, battery status, and patient history from one secure caregiver portal.
+      </p>
+    </div>
+
+    <div class="auth-feature-grid">
+      <div class="auth-feature">
+        <strong>Live GPS View</strong>
+        <p class="muted">Track safe zones, movement changes, and patient travel with a real-time map experience.</p>
+      </div>
+      <div class="auth-feature">
+        <strong>Health Analytics</strong>
+        <p class="muted">Visual charts for pulse, temperature, SpO2, and battery help caregivers read trends quickly.</p>
+      </div>
+      <div class="auth-feature">
+        <strong>Instant Alerts</strong>
+        <p class="muted">Review falls, out-of-zone movement, and unusual vital signs in one clean alert timeline.</p>
+      </div>
+      <div class="auth-feature">
+        <strong>Professional UI</strong>
+        <p class="muted">Designed for project demo, presentation, and future sensor integration with Flask and MySQL.</p>
+      </div>
+    </div>
+
+    <div class="auth-kpi-grid">
+      <div class="auth-kpi">
+        <span class="muted">Core Modules</span>
+        <strong>5</strong>
+      </div>
+      <div class="auth-kpi">
+        <span class="muted">Safe Zone</span>
+        <strong>100 m</strong>
+      </div>
+      <div class="auth-kpi">
+        <span class="muted">Demo Access</span>
+        <strong>Ready</strong>
+      </div>
+    </div>
+
+    <div class="auth-visual" aria-hidden="true">
+      <div class="auth-board">
+        <div class="auth-board-top">
+          <strong>Care Overview</strong>
+          <span><i></i><i></i><i></i></span>
+        </div>
+        <div class="auth-chart"></div>
+        <div class="auth-list">
+          <div>Pulse activity visible in real time</div>
+          <div>Geofence tracking for safe movement</div>
+          <div>Alert history for review and reporting</div>
+        </div>
+      </div>
+
+      <div class="auth-float auth-float-one">Health</div>
+      <div class="auth-float auth-float-two">GPS</div>
+      <div class="auth-float auth-float-three">Alerts</div>
+    </div>
   </section>
+
   <section class="auth-card">
-    <p class="eyebrow">Caregiver Login</p>
-    <h2>Sign in</h2>
-    <p class="muted">Demo login: caregiver@guardiantrack.com / care123</p>
+    <div class="auth-topline">
+      <div>
+        <p class="eyebrow">Caregiver Login</p>
+        <h2>Sign in to continue</h2>
+      </div>
+      <span class="soft-tag">Secure access</span>
+    </div>
+
+    <p class="muted">
+      Demo login: <strong>caregiver@guardiantrack.com</strong> / <strong>care123</strong>
+    </p>
+
     <form method="post" class="auth-form">
-      <label>Email<input type="email" name="email" required></label>
-      <label>Password<input type="password" name="password" required></label>
-      <button class="primary-btn full-width" type="submit">Login</button>
+      <label>
+        Email
+        <input type="email" name="email" placeholder="caregiver@example.com" required>
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" placeholder="Enter password" required>
+      </label>
+
+      <button class="primary-btn full-width" type="submit">Login To Dashboard</button>
     </form>
-    <p class="muted small-text">New caregiver? <a href="{{ url_for('signup') }}">Create account</a></p>
+
+    <p class="muted small-text">
+      New caregiver? <a href="{{ url_for('signup') }}">Create account</a>
+    </p>
   </section>
 </main>
 {% endblock %}

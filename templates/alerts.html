@@ -3,20 +3,91 @@
 {% block content %}
 <div class="app-shell">
   <aside class="sidebar">
-    <div class="brand-panel"><h1>Guardian Track</h1></div>
+    <div class="brand-panel">
+      <p class="eyebrow">Alert Center</p>
+      <h1>Guardian Track</h1>
+      <p class="lede">
+        Review falls, geofence breaks, and abnormal health readings in a clear safety timeline.
+      </p>
+    </div>
+
+    <nav class="nav-panel">
+      <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="nav-link" href="{{ url_for('patients_page') }}">Patients</a>
+      <a class="nav-link" href="{{ url_for('geofencing_page') }}">Geofencing</a>
+      <a class="nav-link" href="{{ url_for('health_history_page') }}">Health History</a>
+      <a class="nav-link active" href="{{ url_for('alerts_page') }}">Alerts</a>
+    </nav>
+
+    {% if logged_in_user %}
+    <div class="profile-panel">
+      <div>
+        <strong>{{ logged_in_user.full_name }}</strong>
+        <p class="muted">{{ logged_in_user.email }}</p>
+      </div>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button class="secondary-btn" type="submit">Logout</button>
+      </form>
+    </div>
+    {% endif %}
   </aside>
+
   <main class="content-area">
-    <section class="hero-banner"><h2>Alert History</h2></section>
+    <section class="hero-banner alerts-hero">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Alert Timeline</p>
+          <h2>Every important event in one clear safety feed.</h2>
+          <p class="muted">
+            The alerts page helps caregivers review abnormal vitals, falls, and out-of-zone movement as a readable incident history.
+          </p>
+
+          <div class="hero-badges">
+            <span class="history-badge">Fall Events</span>
+            <span class="history-badge">Geofence Alerts</span>
+            <span class="history-badge">Health Threshold Alerts</span>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="device-card">
+            <div class="device-screen">
+              <div class="pulse-wave"></div>
+            </div>
+            <div class="device-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="floating-chip chip-heart">Critical</div>
+          <div class="floating-chip chip-temp">Warning</div>
+          <div class="floating-chip chip-spo2">History</div>
+        </div>
+      </div>
+    </section>
+
     <section class="panel">
-      <div class="stack-list">
+      <div class="panel-head">
+        <h3>Recent Alerts</h3>
+        <span class="soft-tag">{{ alerts|length }} records</span>
+      </div>
+
+      <div class="alerts-grid">
         {% for alert in alerts %}
-        <div class="list-card">
-          <strong>{{ alert.patient.name }}</strong>
+        <div class="alert-card {{ alert.severity }}">
+          <div class="alert-card-top">
+            <div>
+              <strong>{{ alert.patient.name }}</strong>
+              <p class="muted">{{ alert.event_type|capitalize }} | {{ alert.created_at|datetime }}</p>
+            </div>
+            <span class="alert-badge {{ alert.severity }}">{{ alert.severity|capitalize }}</span>
+          </div>
+
           <p>{{ alert.message }}</p>
-          <p class="muted">{{ alert.event_type }} | {{ alert.created_at|datetime }}</p>
         </div>
         {% else %}
-        <div class="empty-state">No alerts yet.</div>
+        <div class="empty-state">
+          No alerts yet. Once health or geofence events happen, they will appear here.
+        </div>
         {% endfor %}
       </div>
     </section>

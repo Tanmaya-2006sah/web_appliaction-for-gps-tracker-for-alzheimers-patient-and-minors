@@ -15,8 +15,17 @@ from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
+
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "guardian-track-secret-key")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///guardian_track_app.db")
+
+# MySQL connectivity:
+# Example:
+# mysql+pymysql://root:Root%40123@localhost/guardian_track
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///guardian_track_app.db"
+)
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -26,11 +35,13 @@ SIMULATOR_STARTED = False
 
 class Caregiver(db.Model):
     __tablename__ = "caregivers"
+
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC))
+
     patients = db.relationship("Patient", back_populates="caregiver", cascade="all, delete-orphan")
 
     def set_password(self, password: str) -> None:
@@ -42,6 +53,7 @@ class Caregiver(db.Model):
 
 class Patient(db.Model):
     __tablename__ = "patients"
+
     id = db.Column(db.Integer, primary_key=True)
     caregiver_id = db.Column(db.Integer, db.ForeignKey("caregivers.id"), nullable=False)
     name = db.Column(db.String(120), nullable=False)
@@ -65,6 +77,7 @@ class Patient(db.Model):
 
 class Telemetry(db.Model):
     __tablename__ = "telemetry"
+
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=False)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC))
@@ -81,6 +94,7 @@ class Telemetry(db.Model):
 
 class Alert(db.Model):
     __tablename__ = "alerts"
+
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=False)
     event_type = db.Column(db.String(60), nullable=False)
@@ -89,6 +103,19 @@ class Alert(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC))
 
     patient = db.relationship("Patient", back_populates="alerts")
+
+
+def now_utc():
+    return datetime.now(UTC)
+
+
+def format_dt(value):
+    if not value:
+        return "-"
+    return value.astimezone(UTC).strftime("%d %b %Y %H:%M UTC")
+
+
+app.jinja_env.filters["datetime"] = format_dt
 
 
 def login_required(view):
@@ -103,15 +130,6 @@ def login_required(view):
 def current_caregiver():
     caregiver_id = session.get("caregiver_id")
     return db.session.get(Caregiver, caregiver_id) if caregiver_id else None
-
-
-def format_dt(value):
-    if not value:
-        return "-"
-    return value.astimezone(UTC).strftime("%d %b %Y %H:%M UTC")
-
-
-app.jinja_env.filters["datetime"] = format_dt
 
 
 def haversine_distance_m(lat1, lon1, lat2, lon2):
@@ -143,6 +161,7 @@ def patient_payload(patient, history_limit=20):
 
     if latest:
         distance = round(haversine_distance_m(latest.latitude, latest.longitude, patient.safe_zone_lat, patient.safe_zone_lng), 1)
+
         if latest.fall_detected:
             alerts.append("Fall detected")
         if latest.pulse_rate < patient.pulse_min or latest.pulse_rate > patient.pulse_max:
@@ -202,7 +221,15 @@ def patient_payload(patient, history_limit=20):
 
 
 def create_alert(patient, event_type, severity, message):
-    db.session.add(Alert(patient_id=patient.id, event_type=event_type, severity=severity, message=message, created_at=datetime.now(UTC)))
+    db.session.add(
+        Alert(
+            patient_id=patient.id,
+            event_type=event_type,
+            severity=severity,
+            message=message,
+            created_at=now_utc(),
+        )
+    )
 
 
 def add_telemetry(patient, latitude, longitude, pulse_rate, body_temperature, spo2, battery_level, fall_detected=False, timestamp=None):
@@ -215,12 +242,13 @@ def add_telemetry(patient, latitude, longitude, pulse_rate, body_temperature, sp
         spo2=spo2,
         battery_level=battery_level,
         fall_detected=fall_detected,
-        timestamp=timestamp or datetime.now(UTC),
+        timestamp=timestamp or now_utc(),
     )
     db.session.add(row)
     db.session.flush()
 
     distance = haversine_distance_m(latitude, longitude, patient.safe_zone_lat, patient.safe_zone_lng)
+
     if fall_detected:
         create_alert(patient, "fall", "critical", f"Fall detected for {patient.name}.")
     if distance > patient.geofence_radius_m:
@@ -240,6 +268,7 @@ def dashboard_summary(caregiver):
     patients = Patient.query.filter_by(caregiver_id=caregiver.id).order_by(Patient.name).all()
     data = [patient_payload(p, 12) for p in patients]
     recent_alerts = Alert.query.join(Patient).filter(Patient.caregiver_id == caregiver.id).order_by(Alert.created_at.desc(), Alert.id.desc()).limit(6).all()
+
     return {
         "patients": data,
         "total_patients": len(data),
@@ -300,17 +329,30 @@ def ensure_seed_data():
                 (12.9719, 77.5937, 82, 36.5, 98, 84, False),
                 (12.9721, 77.5939, 85, 36.6, 97, 82, False),
                 (12.9724, 77.5942, 87, 36.7, 97, 80, False),
+                (12.9735, 77.5954, 118, 37.9, 92, 76, True),
             ],
             "Kabir Sharma": [
                 (28.6139, 77.2090, 92, 36.7, 99, 91, False),
                 (28.6140, 77.2092, 95, 36.8, 99, 90, False),
                 (28.6143, 77.2094, 97, 36.8, 98, 89, False),
+                (28.6145, 77.2095, 94, 36.9, 98, 88, False),
             ],
         }
+
         for patient in Patient.query.all():
-            start = datetime.now(UTC) - timedelta(minutes=30)
+            start = now_utc() - timedelta(minutes=30)
             for i, p in enumerate(demo[patient.name]):
-                add_telemetry(patient, p[0], p[1], p[2], p[3], p[4], p[5], p[6], start + timedelta(minutes=i * 10))
+                add_telemetry(
+                    patient,
+                    p[0],
+                    p[1],
+                    p[2],
+                    p[3],
+                    p[4],
+                    p[5],
+                    p[6],
+                    start + timedelta(minutes=i * 10),
+                )
 
 
 def start_simulator():
@@ -361,14 +403,18 @@ def dashboard():
 def login():
     if current_caregiver():
         return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         caregiver = Caregiver.query.filter(func.lower(Caregiver.email) == email).first()
+
         if caregiver and caregiver.check_password(password):
             session["caregiver_id"] = caregiver.id
             return redirect(url_for("dashboard"))
+
         flash("Invalid caregiver email or password.", "error")
+
     return render_template("login.html", page="login")
 
 
@@ -376,10 +422,12 @@ def login():
 def signup():
     if current_caregiver():
         return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+
         if not full_name or not email or len(password) < 6:
             flash("Enter all details and use password of at least 6 characters.", "error")
         elif Caregiver.query.filter(func.lower(Caregiver.email) == email).first():
@@ -391,6 +439,7 @@ def signup():
             db.session.commit()
             flash("Account created. Please log in.", "success")
             return redirect(url_for("login"))
+
     return render_template("signup.html", page="signup")
 
 
@@ -404,6 +453,7 @@ def logout():
 @login_required
 def patients_page():
     caregiver = current_caregiver()
+
     if request.method == "POST":
         patient = Patient(
             caregiver_id=caregiver.id,
@@ -422,7 +472,18 @@ def patients_page():
         )
         db.session.add(patient)
         db.session.commit()
-        add_telemetry(patient, patient.safe_zone_lat, patient.safe_zone_lng, max(70, patient.pulse_min + 5), 36.7, max(96, patient.spo2_min), 100, False)
+
+        add_telemetry(
+            patient,
+            patient.safe_zone_lat,
+            patient.safe_zone_lng,
+            max(70, patient.pulse_min + 5),
+            36.7,
+            max(96, patient.spo2_min),
+            100,
+            False,
+        )
+
         flash("Patient added successfully.", "success")
         return redirect(url_for("patients_page"))
 
@@ -436,10 +497,17 @@ def patients_page():
 def geofencing_page(patient_id=None):
     caregiver = current_caregiver()
     patients = Patient.query.filter_by(caregiver_id=caregiver.id).order_by(Patient.name).all()
+
     if not patients:
         return render_template("geofencing.html", patient=None, patient_json="{}", page="geofencing")
+
     selected = next((p for p in patients if p.id == patient_id), patients[0])
-    return render_template("geofencing.html", patient=selected, patient_json=json.dumps(patient_payload(selected, 16)), page="geofencing")
+    return render_template(
+        "geofencing.html",
+        patient=selected,
+        patient_json=json.dumps(patient_payload(selected, 16)),
+        page="geofencing",
+    )
 
 
 @app.route("/health-history")
@@ -448,11 +516,20 @@ def geofencing_page(patient_id=None):
 def health_history_page(patient_id=None):
     caregiver = current_caregiver()
     patients = Patient.query.filter_by(caregiver_id=caregiver.id).order_by(Patient.name).all()
+
     if not patients:
         return render_template("health_history.html", patient=None, history_json="[]", page="health")
+
     selected = next((p for p in patients if p.id == patient_id), patients[0])
     payload = patient_payload(selected, 24)
-    return render_template("health_history.html", patient=selected, patient_data=payload, history_json=json.dumps(payload["history"]), page="health")
+
+    return render_template(
+        "health_history.html",
+        patient=selected,
+        patient_data=payload,
+        history_json=json.dumps(payload["history"]),
+        page="health",
+    )
 
 
 @app.route("/alerts")
@@ -468,8 +545,10 @@ def alerts_page():
 def patient_api(patient_id):
     patient = db.session.get(Patient, patient_id)
     caregiver = current_caregiver()
+
     if patient is None or patient.caregiver_id != caregiver.id:
         return jsonify({"error": "Patient not found"}), 404
+
     return jsonify(patient_payload(patient, 24))
 
 

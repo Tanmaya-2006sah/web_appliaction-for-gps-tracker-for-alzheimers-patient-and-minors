@@ -4,37 +4,273 @@
 {% block content %}
 <div class="app-shell">
   <aside class="sidebar">
-    <div class="brand-panel"><h1>Guardian Track</h1></div>
+    <div class="brand-panel">
+      <p class="eyebrow">Health Analytics</p>
+      <h1>Guardian Track</h1>
+      <p class="lede">A visual history board for pulse, temperature, oxygen level, battery health, and fall monitoring.</p>
+    </div>
+
+    <nav class="nav-panel">
+      <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="nav-link" href="{{ url_for('patients_page') }}">Patients</a>
+      <a class="nav-link" href="{{ url_for('geofencing_page') }}">Geofencing</a>
+      <a class="nav-link active" href="{{ url_for('health_history_page') }}">Health History</a>
+      <a class="nav-link" href="{{ url_for('alerts_page') }}">Alerts</a>
+    </nav>
+
+    {% if logged_in_user %}
+    <div class="profile-panel">
+      <div>
+        <strong>{{ logged_in_user.full_name }}</strong>
+        <p class="muted">{{ logged_in_user.email }}</p>
+      </div>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button class="secondary-btn" type="submit">Logout</button>
+      </form>
+    </div>
+    {% endif %}
   </aside>
+
   <main class="content-area">
     {% if patient %}
-    <section class="hero-banner"><h2>{{ patient.name }} Health History</h2></section>
+    <section class="hero-banner history-hero">
+      <div class="history-hero-copy">
+        <p class="eyebrow">Patient Health Story</p>
+        <h2>{{ patient.name }} Wellness Timeline</h2>
+        <p class="muted">
+          Follow recent body signals, detect changing patterns early, and give caregivers a more confident view of
+          the patient's day-to-day condition.
+        </p>
+        <div class="history-badges">
+          <span class="history-badge">Pulse Monitoring</span>
+          <span class="history-badge">Temperature Trends</span>
+          <span class="history-badge">SpO2 Tracking</span>
+          <span class="history-badge">Battery Status</span>
+        </div>
+      </div>
+
+      <div class="history-hero-visual" aria-hidden="true">
+        <div class="medical-card">
+          <div class="medical-screen">
+            <div class="medical-line medical-line-one"></div>
+            <div class="medical-line medical-line-two"></div>
+          </div>
+          <div class="medical-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        <div class="floating-chip chip-heart">Pulse</div>
+        <div class="floating-chip chip-temp">Temp</div>
+        <div class="floating-chip chip-spo2">SpO2</div>
+      </div>
+    </section>
+
+    <section class="stats-grid history-stats">
+      <article class="stat-card stat-soft">
+        <span>Patient Name</span>
+        <strong>{{ patient_data.name }}</strong>
+      </article>
+      <article class="stat-card stat-soft">
+        <span>Category</span>
+        <strong>{{ patient_data.category }}</strong>
+      </article>
+      <article class="stat-card stat-soft">
+        <span>Latest Pulse</span>
+        <strong>{{ patient_data.latest.pulse_rate }} bpm</strong>
+      </article>
+      <article class="stat-card stat-soft">
+        <span>Latest SpO2</span>
+        <strong>{{ patient_data.latest.spo2 }}%</strong>
+      </article>
+    </section>
+
+    <section class="history-top-grid">
+      <article class="panel patient-spotlight">
+        <div class="panel-head">
+          <h3>Patient Snapshot</h3>
+          <span class="soft-tag">Live overview</span>
+        </div>
+        <div class="spotlight-body">
+          <div class="spotlight-avatar">
+            <span>{{ patient_data.name[0] }}</span>
+          </div>
+          <div>
+            <h3>{{ patient_data.name }}</h3>
+            <p class="muted">{{ patient_data.category }} | Safe zone: {{ patient_data.safe_zone_name }}</p>
+            <p class="muted">{{ patient_data.notes or "No extra caregiver notes added yet." }}</p>
+          </div>
+        </div>
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <span>Temperature</span>
+            <strong>{{ patient_data.latest.body_temperature }} C</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Battery</span>
+            <strong>{{ patient_data.latest.battery_level }}%</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Distance</span>
+            <strong>{{ patient_data.distance_m if patient_data.distance_m is not none else "-" }} m</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Status</span>
+            <strong>{{ patient_data.status|capitalize }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel wellness-panel">
+        <div class="panel-head">
+          <h3>Care Insight</h3>
+          <span class="soft-tag">Summary</span>
+        </div>
+        <div class="insight-list">
+          <div class="insight-card">
+            <div class="insight-icon">❤</div>
+            <div>
+              <strong>Heart Monitoring</strong>
+              <p>Pulse values are plotted continuously so caregivers can notice sudden rises or drops.</p>
+            </div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon">🩺</div>
+            <div>
+              <strong>Body Condition</strong>
+              <p>Temperature and SpO2 trends help show early changes in wellbeing and comfort.</p>
+            </div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon">🔋</div>
+            <div>
+              <strong>Device Readiness</strong>
+              <p>Battery history keeps the wearable device dependable during outdoor movement and travel.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
     <section class="chart-grid">
-      <article class="panel"><canvas id="pulseChart"></canvas></article>
-      <article class="panel"><canvas id="tempChart"></canvas></article>
-      <article class="panel"><canvas id="spo2Chart"></canvas></article>
-      <article class="panel"><canvas id="batteryChart"></canvas></article>
+      <article class="panel chart-panel">
+        <div class="panel-head">
+          <h3>Pulse Rate</h3>
+          <span class="soft-tag pulse-tag">Beats per minute</span>
+        </div>
+        <p class="muted chart-copy">Watch changes in heart activity to detect stress, movement, or health events.</p>
+        <div class="chart-wrap"><canvas id="pulseChart"></canvas></div>
+      </article>
+
+      <article class="panel chart-panel">
+        <div class="panel-head">
+          <h3>Body Temperature</h3>
+          <span class="soft-tag temp-tag">Celsius</span>
+        </div>
+        <p class="muted chart-copy">Body temperature history helps identify fever risk and abnormal changes.</p>
+        <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
+      </article>
+
+      <article class="panel chart-panel">
+        <div class="panel-head">
+          <h3>SpO2 Level</h3>
+          <span class="soft-tag spo2-tag">Oxygen</span>
+        </div>
+        <p class="muted chart-copy">Oxygen saturation can show whether breathing and oxygen levels stay in a safe range.</p>
+        <div class="chart-wrap"><canvas id="spo2Chart"></canvas></div>
+      </article>
+
+      <article class="panel chart-panel">
+        <div class="panel-head">
+          <h3>Battery Status</h3>
+          <span class="soft-tag battery-tag">Wearable power</span>
+        </div>
+        <p class="muted chart-copy">Battery history helps avoid missed alerts caused by low power in the tracking device.</p>
+        <div class="chart-wrap"><canvas id="batteryChart"></canvas></div>
+      </article>
+    </section>
+
+    <section class="panel records-panel">
+      <div class="panel-head">
+        <h3>Recent Health Records</h3>
+        <span class="soft-tag">Latest {{ patient_data.history|length }} entries</span>
+      </div>
+      <div class="records-grid">
+        {% for entry in patient_data.history|reverse %}
+        <div class="record-card">
+          <div class="record-top">
+            <strong>{{ entry.timestamp }}</strong>
+            <span class="record-status {% if entry.fall_detected %}critical{% else %}stable{% endif %}">
+              {% if entry.fall_detected %}Fall{% else %}Normal{% endif %}
+            </span>
+          </div>
+          <div class="record-metrics">
+            <span>Pulse: {{ entry.pulse_rate }} bpm</span>
+            <span>Temp: {{ entry.body_temperature }} C</span>
+            <span>SpO2: {{ entry.spo2 }}%</span>
+            <span>Battery: {{ entry.battery_level }}%</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% else %}
+    <section class="panel empty-history">
+      <h2>No patient selected</h2>
+      <p class="muted">Add a patient first, then the health history page will show visual charts and insights here.</p>
     </section>
     {% endif %}
   </main>
 </div>
 {% endblock %}
+
 {% block scripts %}
 {% if patient %}
 <script>
 const historyData = {{ history_json|safe }};
 const labels = historyData.map((x) => new Date(x.timestamp).toLocaleTimeString());
-function makeChart(id, values, color){
+
+function makeChart(id, values, color, fill) {
   new Chart(document.getElementById(id), {
     type: "line",
-    data: { labels, datasets: [{ data: values, borderColor: color, backgroundColor: color + "22", fill: true, tension: 0.35 }] },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: color,
+        backgroundColor: fill,
+        fill: true,
+        tension: 0.4,
+        borderWidth: 3.5,
+        pointRadius: 3,
+        pointHoverRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { color: "rgba(31, 41, 55, 0.08)" },
+          ticks: { color: "#667085" }
+        },
+        y: {
+          grid: { color: "rgba(31, 41, 55, 0.08)" },
+          ticks: { color: "#667085" }
+        }
+      }
+    }
   });
 }
-makeChart("pulseChart", historyData.map((x) => x.pulse_rate), "#ff7b42");
-makeChart("tempChart", historyData.map((x) => x.body_temperature), "#ffb347");
-makeChart("spo2Chart", historyData.map((x) => x.spo2), "#1fa5a1");
-makeChart("batteryChart", historyData.map((x) => x.battery_level), "#355cde");
+
+makeChart("pulseChart", historyData.map((x) => x.pulse_rate), "#ff7b42", "rgba(255, 123, 66, 0.14)");
+makeChart("tempChart", historyData.map((x) => x.body_temperature), "#f3aa3c", "rgba(243, 170, 60, 0.14)");
+makeChart("spo2Chart", historyData.map((x) => x.spo2), "#1fa5a1", "rgba(31, 165, 161, 0.14)");
+makeChart("batteryChart", historyData.map((x) => x.battery_level), "#355cde", "rgba(53, 92, 222, 0.14)");
 </script>
 {% endif %}
 {% endblock %}

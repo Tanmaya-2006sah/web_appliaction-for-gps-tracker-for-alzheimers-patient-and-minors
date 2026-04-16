@@ -4,9 +4,9 @@
 <div class="app-shell">
   <aside class="sidebar">
     <div class="brand-panel">
-      <p class="eyebrow">Caregiver Monitoring Platform</p>
+      <p class="eyebrow">Caregiver Command Center</p>
       <h1>Guardian Track</h1>
-      <p class="lede">Live GPS geofencing, pulse monitoring, body temperature, fall detection, health history, and alerts for Alzheimer’s patients and minors.</p>
+      <p class="lede">A premium web dashboard for geofencing, live health monitoring, fall awareness, and patient history analysis.</p>
     </div>
 
     <nav class="nav-panel">
@@ -17,6 +17,7 @@
       <a class="nav-link" href="{{ url_for('alerts_page') }}">Alerts</a>
     </nav>
 
+    {% if logged_in_user %}
     <div class="profile-panel">
       <div>
         <strong>{{ logged_in_user.full_name }}</strong>
@@ -26,51 +27,131 @@
         <button class="secondary-btn" type="submit">Logout</button>
       </form>
     </div>
+    {% endif %}
   </aside>
 
   <main class="content-area">
-    <section class="hero-banner">
-      <div>
-        <p class="eyebrow">Overview</p>
-        <h2>Professional caregiver dashboard for safety and health monitoring</h2>
-        <p class="muted">Add patients, define safe zones, view live maps, watch health trends, and review previous alerts in one place.</p>
+    <section class="hero-banner dashboard-hero">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Overview</p>
+          <h2>Professional monitoring for safety, mobility, and wellness.</h2>
+          <p class="muted">
+            Add patients, define safe zones, view live maps, watch health trends,
+            and review previous alerts in one polished monitoring system.
+          </p>
+
+          <div class="hero-actions">
+            <a class="primary-btn" href="{{ url_for('patients_page') }}">Add New Patient</a>
+            <a class="secondary-btn" href="{{ url_for('geofencing_page') }}">Open Live Map</a>
+          </div>
+
+          <div class="hero-badges">
+            <span class="history-badge">GPS Tracking</span>
+            <span class="history-badge">Pulse & Temperature</span>
+            <span class="history-badge">Alerts & History</span>
+          </div>
+        </div>
+
+        <div class="summary-graphic" aria-hidden="true">
+          <div class="summary-card">
+            <h4>Daily Monitoring Snapshot</h4>
+            <p>Caregivers can review location, health, and risk status from one clean dashboard.</p>
+            <div class="summary-bars">
+              <div class="summary-bar">
+                <span>Patient Coverage</span>
+                <i class="bar-one"></i>
+              </div>
+              <div class="summary-bar">
+                <span>Health Visibility</span>
+                <i class="bar-two"></i>
+              </div>
+              <div class="summary-bar">
+                <span>Alert Awareness</span>
+                <i class="bar-three"></i>
+              </div>
+            </div>
+          </div>
+          <div class="summary-note">Built for minors and Alzheimer’s patients</div>
+        </div>
       </div>
     </section>
 
     <section class="stats-grid">
-      <article class="stat-card"><span>Total Patients</span><strong>{{ summary.total_patients }}</strong></article>
-      <article class="stat-card"><span>Critical</span><strong>{{ summary.critical }}</strong></article>
-      <article class="stat-card"><span>Warning</span><strong>{{ summary.warning }}</strong></article>
-      <article class="stat-card"><span>Stable</span><strong>{{ summary.stable }}</strong></article>
+      <article class="stat-card">
+        <span>Total Patients</span>
+        <strong>{{ summary.total_patients }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Critical</span>
+        <strong>{{ summary.critical }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Warning</span>
+        <strong>{{ summary.warning }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Stable</span>
+        <strong>{{ summary.stable }}</strong>
+      </article>
     </section>
 
     <section class="two-col">
       <article class="panel">
         <div class="panel-head">
-          <h3>How To Use</h3>
+          <h3>Monitoring Workflow</h3>
+          <span class="soft-tag">How it works</span>
         </div>
-        <div class="stack-list">
-          <div class="list-card">Login as caregiver and open the monitoring dashboard.</div>
-          <div class="list-card">Add a patient from the Patients page.</div>
-          <div class="list-card">Open Geofencing to view the live map and 100 meter safe zone.</div>
-          <div class="list-card">Open Health History to view pulse, temperature, SpO2, and battery graphs.</div>
-          <div class="list-card">Open Alerts to view fall alerts, health alerts, and out-of-zone events.</div>
+
+        <div class="workflow-grid">
+          <div class="workflow-step">
+            <div class="workflow-number">1</div>
+            <div>
+              <strong>Create caregiver access</strong>
+              <p>Login securely and open the monitoring workspace for your account.</p>
+            </div>
+          </div>
+
+          <div class="workflow-step">
+            <div class="workflow-number">2</div>
+            <div>
+              <strong>Add patient records</strong>
+              <p>Store health thresholds, safe zone coordinates, and caregiver notes for each patient.</p>
+            </div>
+          </div>
+
+          <div class="workflow-step">
+            <div class="workflow-number">3</div>
+            <div>
+              <strong>Watch live and historical data</strong>
+              <p>Review map tracking, charted health history, and previous alerts in one place.</p>
+            </div>
+          </div>
         </div>
       </article>
 
-      <article class="panel">
+      <article class="panel panel-warm">
         <div class="panel-head">
-          <h3>Current Status</h3>
+          <h3>Current Patient Focus</h3>
+          <span class="soft-tag">Live profile</span>
         </div>
+
         {% if selected_patient %}
-        <div class="list-card">
-          <strong>{{ selected_patient.name }}</strong>
-          <p class="muted">{{ selected_patient.category }}</p>
-          <p class="muted">Safe Zone: {{ selected_patient.safe_zone_name }}</p>
-          <p class="muted">Status: {{ selected_patient.status }}</p>
+        <div class="spotlight-body">
+          <div class="spotlight-avatar">
+            <span>{{ selected_patient.name[0] }}</span>
+          </div>
+          <div>
+            <h3>{{ selected_patient.name }}</h3>
+            <p class="muted">{{ selected_patient.category }}</p>
+            <p class="muted">Safe zone: {{ selected_patient.safe_zone_name }}</p>
+            <p class="muted">Status: {{ selected_patient.status|capitalize }}</p>
+          </div>
         </div>
         {% else %}
-        <div class="empty-state">No patient added for this caregiver yet. Open the Patients page and add one patient first.</div>
+        <div class="empty-state">
+          No patient added for this caregiver yet. Open the Patients page and add one patient first.
+        </div>
         {% endif %}
       </article>
     </section>
